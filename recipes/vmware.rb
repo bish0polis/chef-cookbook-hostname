@@ -28,9 +28,13 @@ if node['virtualization']['system'] != 'vmware'
   Chef::Log.warn('node["virtualization"]["system"] is not "vmware".')
 end
 
-unless FileTest.executable?('/usr/sbin/vmtoolsd')
+case
+when FileTest.executable?('/usr/sbin/vmtoolsd') 
+  node.default['set_fqdn'] = Mixlib::ShellOut.new("/usr/sbin/vmtoolsd --cmd 'info-get guestinfo.hostname'").stdout.chomp
+when FileTest.executable?('/usr/bin/vmtoolsd')
+  node.default['set_fqdn'] = Mixlib::ShellOut.new("/usr/bin/vmtoolsd --cmd 'info-get guestinfo.hostname'").stdout.chomp
+else
   Chef::Application.fatal!('/usr/sbin/vmtoolsd is not found or not executable.')
 end
 
-node.default['set_fqdn'] = Mixlib::ShellOut.new("/usr/sbin/vmtoolsd --cmd 'info-get guestinfo.hostname'").stdout.chomp
-include_recipe 'hostname::default'
+include_recipe 'hostnames::default'
